@@ -1,0 +1,14 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Verifica se as variáveis de ambiente estão configuradas
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('⚠️ Supabase URL ou Anon Key não encontrados nas variáveis de ambiente. O sistema pode não funcionar corretamente.');
+}
+
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
+);
