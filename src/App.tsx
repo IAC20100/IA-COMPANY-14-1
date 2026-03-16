@@ -31,6 +31,7 @@ import LockerManager from './pages/LockerManager';
 import VisitorControl from './pages/VisitorControl';
 import CriticalMonitoring from './pages/CriticalMonitoring';
 import EnergyMonitoring from './pages/EnergyMonitoring';
+import Presentation from './pages/Presentation';
 
 function SupabaseStatus() {
   const [status, setStatus] = useState<'checking' | 'connected' | 'error' | 'missing_env'>('checking');
@@ -101,7 +102,8 @@ function Layout({ children }: { children: React.ReactNode }) {
   }
 
   const isDashboard = location.pathname === '/';
-  const isImmersive = isDashboard || [
+  const isPresentation = location.pathname === '/presentation';
+  const isImmersive = isDashboard || isPresentation || [
     '/tickets', 
     '/service-orders', 
     '/tickets/new', 
@@ -245,6 +247,7 @@ export default function App() {
           <Route path="/tickets/:id" element={<TicketView />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/weather" element={<Weather />} />
+          <Route path="/presentation" element={<Presentation />} />
         </Routes>
       </Layout>
     </HashRouter>

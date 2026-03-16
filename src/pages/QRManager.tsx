@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useStore } from '../store';
 import { QRCodeSVG } from 'qrcode.react';
+import { toPng } from 'html-to-image';
 import { 
   QrCode, 
   Plus, 
@@ -8,17 +9,20 @@ import {
   Download, 
   Building2, 
   MapPin,
-  ExternalLink
+  ExternalLink,
+  Smartphone
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function QRManager() {
-  const { clients, updateClient } = useStore();
+  const { clients, updateClient, companyLogo, companyData } = useStore();
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
   const [qrSize, setQrSize] = useState(150);
+  const qrTemplateRef = useRef<HTMLDivElement>(null);
+  const [downloadingLocation, setDownloadingLocation] = useState<{id: string, name: string} | null>(null);
 
   const selectedClient = useMemo(() => {
     return clients.find(c => c.id === selectedClientId);
@@ -46,26 +50,29 @@ export default function QRManager() {
   };
 
   const downloadQRCode = (locationId: string, locationName: string) => {
-    const svg = document.getElementById(`qr-${locationId}`);
-    if (!svg) return;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
+    setDownloadingLocation({ id: locationId, name: locationName });
     
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx?.drawImage(img, 0, 0);
-      const pngFile = canvas.toDataURL('image/png');
-      const downloadLink = document.createElement('a');
-      downloadLink.download = `QR-${selectedClient?.name}-${locationName}.png`;
-      downloadLink.href = pngFile;
-      downloadLink.click();
-    };
-    
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+    // Wait for React to render the hidden template
+    setTimeout(async () => {
+      if (qrTemplateRef.current) {
+        try {
+          const dataUrl = await toPng(qrTemplateRef.current, {
+            quality: 1.0,
+            pixelRatio: 3, // High resolution for printing
+          });
+          
+          const downloadLink = document.createElement('a');
+          downloadLink.download = `QR-${selectedClient?.name}-${locationName}.png`;
+          downloadLink.href = dataUrl;
+          downloadLink.click();
+        } catch (err) {
+          console.error('Error generating QR code image:', err);
+          alert('Erro ao gerar a imagem do QR Code.');
+        } finally {
+          setDownloadingLocation(null);
+        }
+      }
+    }, 100);
   };
 
   // Construct the public URL for the ticket form
@@ -233,6 +240,90 @@ export default function QRManager() {
           </div>
         </form>
       </Modal>
+
+      {/* Hidden QR Code Template for Download */}
+      {downloadingLocation && (
+        <div className="fixed left-[-9999px] top-[-9999px]">
+          <div 
+            ref={qrTemplateRef}
+            className="bg-slate-50 w-[800px] h-[1131px] flex flex-col items-center p-16 relative overflow-hidden"
+            style={{ fontFamily: 'Inter, sans-serif' }}
+          >
+            {/* Decorative Background Elements */}
+            <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl" />
+            <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-400/5 rounded-full blur-3xl" />
+            
+            {/* Top/Bottom solid accent lines */}
+            <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-blue-600 via-purple-600 to-emerald-500" />
+            <div className="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-r from-emerald-500 via-purple-600 to-blue-600" />
+
+            {/* Header */}
+            <div className="relative z-10 w-full flex flex-col items-center mt-8 mb-12">
+              {companyLogo ? (
+                <img src={companyLogo} alt="Logo" className="h-32 object-contain mb-6 drop-shadow-xl" />
+              ) : (
+                <div className="h-32 w-32 bg-gradient-to-br from-blue-600 to-purple-600 rounded-3xl shadow-xl flex items-center justify-center mb-6 text-white">
+                  <Building2 className="w-16 h-16" />
+                </div>
+              )}
+              <h1 className="text-3xl font-black text-slate-800 text-center uppercase tracking-[0.2em]">
+                {companyData?.name || 'IA COMPANY TEC'}
+              </h1>
+            </div>
+
+            {/* Main CTA */}
+            <div className="text-center mb-12 relative z-10">
+              <h2 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700 tracking-tight mb-4">
+                SUPORTE RÁPIDO
+              </h2>
+              <p className="text-2xl text-slate-600 font-medium">
+                Encontrou algum problema neste local?
+              </p>
+            </div>
+
+            {/* QR Code Hero */}
+            <div className="relative z-10 bg-white p-12 rounded-[3rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-slate-100 flex flex-col items-center mb-12">
+              {/* Corner accents (Scanner Reticle) */}
+              <div className="absolute top-0 left-0 w-16 h-16 border-t-8 border-l-8 border-blue-600 rounded-tl-[3rem]" />
+              <div className="absolute top-0 right-0 w-16 h-16 border-t-8 border-r-8 border-purple-600 rounded-tr-[3rem]" />
+              <div className="absolute bottom-0 left-0 w-16 h-16 border-b-8 border-l-8 border-emerald-500 rounded-bl-[3rem]" />
+              <div className="absolute bottom-0 right-0 w-16 h-16 border-b-8 border-r-8 border-blue-600 rounded-br-[3rem]" />
+              
+              <QRCodeSVG 
+                value={getPublicUrl(selectedClientId, downloadingLocation.id)}
+                size={360}
+                level="H"
+                includeMargin={false}
+              />
+            </div>
+
+            {/* Location Badge */}
+            <div className="relative z-10 bg-slate-900 text-white py-5 px-10 rounded-full shadow-2xl flex items-center gap-5 mb-auto max-w-full border border-slate-700">
+              <MapPin className="w-10 h-10 text-emerald-400 flex-shrink-0" />
+              <div className="flex flex-col text-left">
+                <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">{selectedClient?.name}</span>
+                <span className="text-2xl font-black truncate">{downloadingLocation.name}</span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="relative z-10 w-full flex items-center justify-center gap-6 mt-12 bg-white/80 py-6 px-8 rounded-3xl border border-white shadow-sm">
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 flex-shrink-0 shadow-inner">
+                <Smartphone className="w-8 h-8" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-2xl font-black text-slate-800 uppercase tracking-wide">
+                  Aponte a Câmera
+                </h3>
+                <p className="text-lg text-slate-600 font-medium">
+                  Escaneie o código para abrir um chamado instantâneo
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

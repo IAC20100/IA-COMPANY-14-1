@@ -38,7 +38,7 @@ import { CSS } from '@dnd-kit/utilities';
 interface TileData {
   id: string;
   type: 'wide' | 'square';
-  component: React.ReactNode;
+  component: React.ReactNode | ((size: string) => React.ReactNode);
 }
 
 function SortableTile({ id, children, className, onResize }: { id: string, children: React.ReactNode, className: string, onResize: (e: React.MouseEvent) => void }) {
@@ -80,7 +80,7 @@ function SortableTile({ id, children, className, onResize }: { id: string, child
   );
 }
 
-function WeatherTile() {
+function WeatherTile({ size }: { size?: string }) {
   const [data, setData] = useState<{ temp: number; city: string; condition: string; high: number; low: number } | null>(null);
 
   useEffect(() => {
@@ -117,21 +117,35 @@ function WeatherTile() {
   return (
     <Link to="/weather" className="w-full h-full bg-gradient-to-br from-[#0078d7] to-[#005a9e] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95">
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-      <div className="flex items-center gap-6 h-full relative z-10">
-        <div className="relative group-hover:scale-110 transition-transform duration-500">
-          <SunIcon className="w-16 h-16 text-yellow-300 drop-shadow-[0_0_15px_rgba(253,224,71,0.5)]" />
-          <CloudSun className="w-10 h-10 text-white absolute -bottom-1 -right-1 drop-shadow-lg" />
-        </div>
-        <div>
-          <span className="text-5xl font-light drop-shadow-lg">{data ? `${data.temp}°` : '--°'}</span>
-          <div className="mt-1">
-            <p className="text-sm font-bold uppercase tracking-wider drop-shadow-md">{data?.city || 'Carregando...'}</p>
-            <p className="text-xs opacity-80 drop-shadow-sm">{data?.condition || '...'}</p>
-            {data && <p className="text-[10px] opacity-60">{data.high}° / {data.low}°</p>}
+      {size === 'small' ? (
+        <>
+          <div className="flex justify-center items-center h-full relative z-10">
+            <SunIcon className="w-12 h-12 text-yellow-300 drop-shadow-[0_0_15px_rgba(253,224,71,0.5)] group-hover:scale-110 transition-transform duration-500" />
           </div>
-        </div>
-      </div>
-      <span className="text-[11px] font-bold uppercase tracking-wider relative z-10 drop-shadow-md">Clima</span>
+          <div className="flex justify-between items-end relative z-10 w-full">
+            <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Clima</span>
+            <span className="text-2xl font-light drop-shadow-lg text-white">{data ? `${data.temp}°` : '--°'}</span>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-6 h-full relative z-10">
+            <div className="relative group-hover:scale-110 transition-transform duration-500">
+              <SunIcon className="w-16 h-16 text-yellow-300 drop-shadow-[0_0_15px_rgba(253,224,71,0.5)]" />
+              <CloudSun className="w-10 h-10 text-white absolute -bottom-1 -right-1 drop-shadow-lg" />
+            </div>
+            <div>
+              <span className="text-5xl font-light drop-shadow-lg text-white">{data ? `${data.temp}°` : '--°'}</span>
+              <div className="mt-1 text-white">
+                <p className="text-sm font-bold uppercase tracking-wider drop-shadow-md">{data?.city || 'Carregando...'}</p>
+                <p className="text-xs opacity-80 drop-shadow-sm">{data?.condition || '...'}</p>
+                {data && <p className="text-[10px] opacity-60">{data.high}° / {data.low}°</p>}
+              </div>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold uppercase tracking-wider relative z-10 drop-shadow-md text-white">Clima</span>
+        </>
+      )}
     </Link>
   );
 }
@@ -203,15 +217,15 @@ export default function Dashboard() {
     {
       id: 'tickets',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/tickets" className="w-full h-full bg-gradient-to-br from-[#1ba19b] to-[#168c87] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
           <div className="flex justify-center items-center h-full relative z-10">
-            <Hammer className="w-16 h-16 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+            <Hammer className={`${size === 'small' ? 'w-12 h-12' : 'w-16 h-16'} text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500`} />
           </div>
           <div className="flex justify-between items-end relative z-10">
-            <span className="text-[11px] font-bold uppercase tracking-wider drop-shadow-md text-white">Ordens de Serviço</span>
-            <span className="text-5xl font-light drop-shadow-lg text-white">{openTickets}</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider drop-shadow-md text-white">{size === 'small' ? 'OS' : 'Ordens de Serviço'}</span>
+            <span className={`${size === 'small' ? 'text-2xl' : 'text-5xl'} font-light drop-shadow-lg text-white`}>{openTickets}</span>
           </div>
         </Link>
       )
@@ -267,21 +281,23 @@ export default function Dashboard() {
     {
       id: 'financial',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/financial" className="w-full h-full bg-gradient-to-br from-[#22b14c] to-[#1a943d] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
           <div className="flex flex-col justify-center items-center h-full relative z-10">
-            <TrendingUp className="w-14 h-14 text-white mb-2 drop-shadow-lg group-hover:translate-y-[-4px] transition-transform duration-500" />
-            <span className="text-3xl font-light drop-shadow-lg">
+            <TrendingUp className={`${size === 'small' ? 'w-10 h-10' : 'w-14 h-14'} text-white mb-2 drop-shadow-lg group-hover:translate-y-[-4px] transition-transform duration-500`} />
+            <span className={`${size === 'small' ? 'text-xl' : 'text-3xl'} font-light drop-shadow-lg`}>
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(saldo)}
             </span>
           </div>
           <div className="flex justify-between items-end relative z-10">
             <span className="text-[11px] font-bold uppercase tracking-wider drop-shadow-md">Financeiro</span>
-            <div className="flex items-center gap-2 bg-white/10 px-2 py-1 rounded-lg border border-white/10">
-              <ShieldCheck className="w-3 h-3 text-white/70" />
-              <span className="text-[9px] font-bold uppercase tracking-tight text-white/70">Pasta Digital Ativa</span>
-            </div>
+            {size !== 'small' && (
+              <div className="flex items-center gap-2 bg-white/10 px-2 py-1 rounded-lg border border-white/10">
+                <ShieldCheck className="w-3 h-3 text-white/70" />
+                <span className="text-[9px] font-bold uppercase tracking-tight text-white/70">Pasta Digital Ativa</span>
+              </div>
+            )}
           </div>
         </Link>
       )
@@ -289,96 +305,136 @@ export default function Dashboard() {
     {
       id: 'calendar',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/calendar" className="w-full h-full bg-gradient-to-br from-[#4285f4] to-[#3367d6] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 text-white">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
-              <CalendarIcon className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Próximo Compromisso</p>
-              {nextAppointment ? (
-                <div className="space-y-1">
-                  <p className="font-black text-xl truncate text-white leading-tight">{nextAppointment.title}</p>
-                  <div className="flex items-center gap-2 text-white/80">
-                    <Clock className="w-3 h-3" />
-                    <p className="text-sm font-medium">
-                      {new Date(nextAppointment.start).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} às {new Date(nextAppointment.start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <CalendarIcon className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Agenda</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <CalendarIcon className="w-10 h-10 text-white" />
                 </div>
-              ) : (
-                <p className="text-sm italic text-white/60 mt-2">Sem compromissos agendados</p>
-              )}
-            </div>
-          </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Agenda</span>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Próximo Compromisso</p>
+                  {nextAppointment ? (
+                    <div className="space-y-1">
+                      <p className="font-black text-xl truncate text-white leading-tight">{nextAppointment.title}</p>
+                      <div className="flex items-center gap-2 text-white/80">
+                        <Clock className="w-3 h-3" />
+                        <p className="text-sm font-medium">
+                          {new Date(nextAppointment.start).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} às {new Date(nextAppointment.start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm italic text-white/60 mt-2">Sem compromissos agendados</p>
+                  )}
+                </div>
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Agenda</span>
+            </>
+          )}
         </Link>
       )
     },
     {
       id: 'assembly',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/assembly" className="w-full h-full bg-gradient-to-br from-[#673ab7] to-[#512da8] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 text-white">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
-              <Gavel className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Assembleia Virtual</p>
-              <div className="space-y-1">
-                <p className="font-black text-xl truncate text-white leading-tight">Sessão Híbrida Ativa</p>
-                <div className="flex items-center gap-2 text-white/80">
-                  <Lock className="w-3 h-3" />
-                  <p className="text-sm font-medium">Votação Criptografada</p>
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <Gavel className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Assembleia</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <Gavel className="w-10 h-10 text-white" />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Assembleia Virtual</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-xl truncate text-white leading-tight">Sessão Híbrida Ativa</p>
+                    <div className="flex items-center gap-2 text-white/80">
+                      <Lock className="w-3 h-3" />
+                      <p className="text-sm font-medium">Votação Criptografada</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <div className="flex justify-between items-end relative z-10">
-            <span className="text-[11px] font-bold uppercase tracking-wider drop-shadow-md">Participação Remota</span>
-            <div className="flex items-center gap-2 bg-white/10 px-2 py-1 rounded-lg border border-white/10">
-              <ShieldCheck className="w-3 h-3 text-white/70" />
-              <span className="text-[9px] font-bold uppercase tracking-tight text-white/70">Validade Jurídica</span>
-            </div>
-          </div>
+              <div className="flex justify-between items-end relative z-10">
+                <span className="text-[11px] font-bold uppercase tracking-wider drop-shadow-md">Participação Remota</span>
+                <div className="flex items-center gap-2 bg-white/10 px-2 py-1 rounded-lg border border-white/10">
+                  <ShieldCheck className="w-3 h-3 text-white/70" />
+                  <span className="text-[9px] font-bold uppercase tracking-tight text-white/70">Validade Jurídica</span>
+                </div>
+              </div>
+            </>
+          )}
         </Link>
       )
     },
     {
       id: 'intelligent-checklist',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/intelligent-checklist" className="w-full h-full bg-gradient-to-br from-[#E11D48] to-[#9F1239] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 text-white">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
-              <ClipboardCheck className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Checklist NBR 5674</p>
-              <div className="space-y-1">
-                <p className="font-black text-xl truncate text-white leading-tight">Cronograma Inteligente</p>
-                <div className="flex items-center gap-2 text-white/80">
-                  {overdueMaintenances > 0 ? (
-                    <>
-                      <AlertCircle className="w-4 h-4 text-yellow-300 animate-pulse" />
-                      <p className="text-sm font-bold text-yellow-300">{overdueMaintenances} manutenções atrasadas</p>
-                    </>
-                  ) : (
-                    <>
-                      <Clock className="w-4 h-4" />
-                      <p className="text-sm font-medium">Monitoramento ativo</p>
-                    </>
-                  )}
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <ClipboardCheck className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Checklist</span>
+                {overdueMaintenances > 0 && <span className="text-2xl font-light drop-shadow-lg text-white">{overdueMaintenances}</span>}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <ClipboardCheck className="w-10 h-10 text-white" />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Checklist NBR 5674</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-xl truncate text-white leading-tight">Cronograma Inteligente</p>
+                    <div className="flex items-center gap-2 text-white/80">
+                      {overdueMaintenances > 0 ? (
+                        <>
+                          <AlertCircle className="w-4 h-4 text-yellow-300 animate-pulse" />
+                          <p className="text-sm font-bold text-yellow-300">{overdueMaintenances} manutenções atrasadas</p>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-4 h-4" />
+                          <p className="text-sm font-medium">Monitoramento ativo</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Manutenção Preventiva</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Manutenção Preventiva</span>
+            </>
+          )}
         </Link>
       )
     },
@@ -401,37 +457,51 @@ export default function Dashboard() {
     {
       id: 'approvals',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/tickets" className={`w-full h-full p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 transition-all ${
           pendingApprovalCount > 0 
             ? 'bg-gradient-to-br from-amber-500 to-amber-700 animate-pulse-subtle' 
             : 'bg-gradient-to-br from-zinc-700 to-zinc-800'
         }`}>
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className={`p-3 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500 ${
-              pendingApprovalCount > 0 ? 'bg-white/30' : 'bg-white/10'
-            }`}>
-              <Clock className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Aprovações Pendentes</p>
-              <div className="space-y-1">
-                <p className="font-black text-xl truncate text-white leading-tight">Orçamentos</p>
-                <div className="flex items-center gap-2 text-white/80">
-                  {pendingApprovalCount > 0 ? (
-                    <>
-                      <AlertCircle className="w-4 h-4 text-white animate-pulse" />
-                      <p className="text-sm font-bold text-white">{pendingApprovalCount} aguardando síndico</p>
-                    </>
-                  ) : (
-                    <p className="text-sm font-medium">Tudo em dia</p>
-                  )}
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <Clock className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Aprovações</span>
+                {pendingApprovalCount > 0 && <span className="text-2xl font-light drop-shadow-lg text-white">{pendingApprovalCount}</span>}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className={`p-3 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500 ${
+                  pendingApprovalCount > 0 ? 'bg-white/30' : 'bg-white/10'
+                }`}>
+                  <Clock className="w-10 h-10 text-white" />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Aprovações Pendentes</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-xl truncate text-white leading-tight">Orçamentos</p>
+                    <div className="flex items-center gap-2 text-white/80">
+                      {pendingApprovalCount > 0 ? (
+                        <>
+                          <AlertCircle className="w-4 h-4 text-white animate-pulse" />
+                          <p className="text-sm font-bold text-white">{pendingApprovalCount} aguardando síndico</p>
+                        </>
+                      ) : (
+                        <p className="text-sm font-medium">Tudo em dia</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Gestão de OS</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Gestão de OS</span>
+            </>
+          )}
         </Link>
       )
     },
@@ -454,7 +524,7 @@ export default function Dashboard() {
     {
       id: 'weather',
       type: 'wide',
-      component: <WeatherTile />
+      component: (size) => <WeatherTile size={size} />
     },
     {
       id: 'quick-actions',
@@ -483,223 +553,332 @@ export default function Dashboard() {
     {
       id: 'supplies',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/supplies" className={`w-full h-full p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 transition-all ${
           lowStockCount > 0 
             ? 'bg-gradient-to-br from-red-500 to-red-700 animate-pulse-subtle' 
             : 'bg-gradient-to-br from-emerald-600 to-emerald-800'
         }`}>
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className={`p-3 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500 ${
-              lowStockCount > 0 ? 'bg-white/30' : 'bg-white/10'
-            }`}>
-              <Package className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Controle de Insumos</p>
-              <div className="space-y-1">
-                <p className="font-black text-xl truncate text-white leading-tight">Estoque & Cotações</p>
-                <div className="flex items-center gap-2 text-white/80">
-                  {lowStockCount > 0 ? (
-                    <>
-                      <AlertTriangle className="w-4 h-4 text-white animate-pulse" />
-                      <p className="text-sm font-bold text-white">{lowStockCount} itens com estoque baixo</p>
-                    </>
-                  ) : (
-                    <p className="text-sm font-medium">Estoque normalizado</p>
-                  )}
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <Package className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Insumos</span>
+                {lowStockCount > 0 && <AlertTriangle className="w-5 h-5 text-white animate-pulse drop-shadow-lg" />}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className={`p-3 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500 ${
+                  lowStockCount > 0 ? 'bg-white/30' : 'bg-white/10'
+                }`}>
+                  <Package className="w-10 h-10 text-white" />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Controle de Insumos</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-xl truncate text-white leading-tight">Estoque & Cotações</p>
+                    <div className="flex items-center gap-2 text-white/80">
+                      {lowStockCount > 0 ? (
+                        <>
+                          <AlertTriangle className="w-4 h-4 text-white animate-pulse" />
+                          <p className="text-sm font-bold text-white">{lowStockCount} itens com estoque baixo</p>
+                        </>
+                      ) : (
+                        <p className="text-sm font-medium">Estoque normalizado</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Materiais & Fornecedores</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Materiais & Fornecedores</span>
+            </>
+          )}
         </Link>
       )
     },
     {
       id: 'accountability',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/accountability" className="w-full h-full p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 transition-all bg-gradient-to-br from-indigo-600 to-indigo-800">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className="p-3 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500 bg-white/10">
-              <BarChart3 className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Prestação de Contas</p>
-              <div className="space-y-1">
-                <p className="font-black text-xl truncate text-white leading-tight">Inadimplência & Fluxo</p>
-                <div className="flex items-center gap-2 text-white/80">
-                  <TrendingUp className="w-4 h-4 text-emerald-400" />
-                  <p className="text-sm font-bold text-white">Transparência em tempo real</p>
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <BarChart3 className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Finanças</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className="p-3 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500 bg-white/10">
+                  <BarChart3 className="w-10 h-10 text-white" />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Prestação de Contas</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-xl truncate text-white leading-tight">Inadimplência & Fluxo</p>
+                    <div className="flex items-center gap-2 text-white/80">
+                      <TrendingUp className="w-4 h-4 text-emerald-400" />
+                      <p className="text-sm font-bold text-white">Transparência em tempo real</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <div className="flex justify-between items-end relative z-10">
-            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Relatórios Financeiros</span>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-[10px] font-black uppercase text-white/50">Total Inadimplência</p>
-                <p className="text-lg font-black text-white">R$ {totalDelinquency > 0 ? totalDelinquency.toLocaleString('pt-BR') : '4.250,00'}</p>
+              <div className="flex justify-between items-end relative z-10">
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Relatórios Financeiros</span>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="text-[10px] font-black uppercase text-white/50">Total Inadimplência</p>
+                    <p className="text-lg font-black text-white">R$ {totalDelinquency > 0 ? totalDelinquency.toLocaleString('pt-BR') : '4.250,00'}</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
         </Link>
       )
     },
     {
       id: 'consumption',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/consumption" className="w-full h-full bg-gradient-to-br from-[#3b82f6] to-[#1d4ed8] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 text-white">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
-              <Droplets className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Medição Individualizada</p>
-              <div className="space-y-1">
-                <p className="font-black text-xl truncate text-white leading-tight">Consumo Água & Gás</p>
-                <div className="flex items-center gap-2 text-white/80">
-                  <Zap className="w-4 h-4 text-yellow-300" />
-                  <p className="text-sm font-bold text-yellow-300">Sensores IoT Ativos</p>
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <Droplets className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Consumo</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <Droplets className="w-10 h-10 text-white" />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Medição Individualizada</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-xl truncate text-white leading-tight">Consumo Água & Gás</p>
+                    <div className="flex items-center gap-2 text-white/80">
+                      <Zap className="w-4 h-4 text-yellow-300" />
+                      <p className="text-sm font-bold text-yellow-300">Sensores IoT Ativos</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Leitura em Tempo Real</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Leitura em Tempo Real</span>
+            </>
+          )}
         </Link>
       )
     },
     {
       id: 'notices',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/notices" className="w-full h-full bg-gradient-to-br from-[#f59e0b] to-[#d97706] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 text-white">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
-              <Megaphone className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Mural de Avisos</p>
-              <div className="space-y-1">
-                <p className="font-black text-xl truncate text-white leading-tight">Comunicados Oficiais</p>
-                <div className="flex items-center gap-2 text-white/80">
-                  <span className="text-sm font-bold">{notices.length} avisos ativos</span>
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <Megaphone className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Avisos</span>
+                <span className="text-2xl font-light drop-shadow-lg text-white">{notices.length}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <Megaphone className="w-10 h-10 text-white" />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Mural de Avisos</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-xl truncate text-white leading-tight">Comunicados Oficiais</p>
+                    <div className="flex items-center gap-2 text-white/80">
+                      <span className="text-sm font-bold">{notices.length} avisos ativos</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Comunicação Segmentada</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Comunicação Segmentada</span>
+            </>
+          )}
         </Link>
       )
     },
     {
       id: 'locker',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/locker" className="w-full h-full bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 text-white">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
-              <Box className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Locker Digital</p>
-              <div className="space-y-1">
-                <p className="font-black text-xl truncate text-white leading-tight">Gestão de Encomendas</p>
-                <div className="flex items-center gap-2 text-white/80">
-                  <span className="text-sm font-bold">{packages.filter(p => p.status === 'PENDING').length} pacotes aguardando</span>
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <Box className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Locker</span>
+                <span className="text-2xl font-light drop-shadow-lg text-white">{packages.filter(p => p.status === 'PENDING').length}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <Box className="w-10 h-10 text-white" />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Locker Digital</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-xl truncate text-white leading-tight">Gestão de Encomendas</p>
+                    <div className="flex items-center gap-2 text-white/80">
+                      <span className="text-sm font-bold">{packages.filter(p => p.status === 'PENDING').length} pacotes aguardando</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Notificação Automática</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Notificação Automática</span>
+            </>
+          )}
         </Link>
       )
     },
     {
       id: 'visitors',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/visitors" className="w-full h-full bg-gradient-to-br from-[#8b5cf6] to-[#7c3aed] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 text-white">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
-              <UserCheck className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Controle de Acesso</p>
-              <div className="space-y-1">
-                <p className="font-black text-xl truncate text-white leading-tight">Convites Digitais</p>
-                <div className="flex items-center gap-2 text-white/80">
-                  <span className="text-sm font-bold">{visitors.filter(v => v.status === 'ACTIVE').length} convites ativos</span>
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <UserCheck className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Acessos</span>
+                <span className="text-2xl font-light drop-shadow-lg text-white">{visitors.filter(v => v.status === 'ACTIVE').length}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <UserCheck className="w-10 h-10 text-white" />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Controle de Acesso</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-xl truncate text-white leading-tight">Convites Digitais</p>
+                    <div className="flex items-center gap-2 text-white/80">
+                      <span className="text-sm font-bold">{visitors.filter(v => v.status === 'ACTIVE').length} convites ativos</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">QR Code Portaria</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">QR Code Portaria</span>
+            </>
+          )}
         </Link>
       )
     },
     {
       id: 'monitoring',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/monitoring" className={`w-full h-full p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 transition-all ${
           criticalEvents.some(e => e.status === 'CRITICAL')
             ? 'bg-gradient-to-br from-red-600 to-red-800 animate-pulse-subtle'
             : 'bg-gradient-to-br from-[#10b981] to-[#059669]'
         }`}>
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
-              <Activity className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Monitoramento Crítico</p>
-              <div className="space-y-1">
-                <p className="font-black text-xl truncate text-white leading-tight">Sensores IoT</p>
-                <div className="flex items-center gap-2 text-white/80">
-                  {criticalEvents.some(e => e.status === 'CRITICAL') ? (
-                    <span className="text-sm font-bold text-white animate-pulse">ALERTA CRÍTICO ATIVO</span>
-                  ) : (
-                    <span className="text-sm font-bold">Todos os sistemas normais</span>
-                  )}
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <Activity className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Sensores</span>
+                {criticalEvents.some(e => e.status === 'CRITICAL') && <AlertTriangle className="w-5 h-5 text-white animate-pulse drop-shadow-lg" />}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <Activity className="w-10 h-10 text-white" />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Monitoramento Crítico</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-xl truncate text-white leading-tight">Sensores IoT</p>
+                    <div className="flex items-center gap-2 text-white/80">
+                      {criticalEvents.some(e => e.status === 'CRITICAL') ? (
+                        <span className="text-sm font-bold text-white animate-pulse">ALERTA CRÍTICO ATIVO</span>
+                      ) : (
+                        <span className="text-sm font-bold">Todos os sistemas normais</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Infraestrutura em Tempo Real</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Infraestrutura em Tempo Real</span>
+            </>
+          )}
         </Link>
       )
     },
     {
       id: 'energy',
       type: 'wide',
-      component: (
+      component: (size) => (
         <Link to="/energy" className="w-full h-full bg-gradient-to-br from-[#059669] to-[#047857] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 text-white">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
-          <div className="flex items-start gap-4 h-full relative z-10">
-            <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
-              <Zap className="w-10 h-10 text-white" />
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Eco-Monitoramento</p>
-              <div className="space-y-1">
-                <p className="font-black text-xl truncate text-white leading-tight">Eficiência Energética</p>
-                <div className="flex items-center gap-2 text-white/80">
-                  <span className="text-sm font-bold">Economia de R$ {energyData.reduce((acc, curr) => acc + (curr.costWithoutTech - curr.actualCost), 0).toLocaleString()} acumulada</span>
+          {size === 'small' ? (
+            <>
+              <div className="flex justify-center items-center h-full relative z-10">
+                <Zap className="w-12 h-12 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex justify-between items-end relative z-10 w-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider drop-shadow-md text-white">Energia</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-4 h-full relative z-10">
+                <div className="p-3 bg-white/20 rounded-2xl border border-white/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <Zap className="w-10 h-10 text-white" />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[10px] font-black uppercase text-white/70 mb-1 tracking-[0.2em]">Eco-Monitoramento</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-xl truncate text-white leading-tight">Eficiência Energética</p>
+                    <div className="flex items-center gap-2 text-white/80">
+                      <span className="text-sm font-bold">Economia de R$ {energyData.reduce((acc, curr) => acc + (curr.costWithoutTech - curr.actualCost), 0).toLocaleString()} acumulada</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Sustentabilidade & Economia</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] relative z-10 text-white/70">Sustentabilidade & Economia</span>
+            </>
+          )}
         </Link>
       )
     },
@@ -727,6 +906,19 @@ export default function Dashboard() {
           </div>
           <span className="text-[10px] font-bold uppercase tracking-wider relative z-10 drop-shadow-md">Demo Data</span>
         </button>
+      )
+    },
+    {
+      id: 'presentation',
+      type: 'square',
+      component: (
+        <Link to="/presentation" className="w-full h-full bg-gradient-to-br from-[#8b5cf6] to-[#6d28d9] hover:brightness-110 transition-all p-4 flex flex-col justify-between  group relative overflow-hidden border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-95 text-left">
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none" />
+          <div className="flex justify-center items-center h-full relative z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500"><path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/></svg>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider relative z-10 drop-shadow-md">Apresentação</span>
+        </Link>
       )
     }
   ];
@@ -854,7 +1046,7 @@ export default function Dashboard() {
                   className={sizeClasses}
                   onResize={(e) => handleResize(tile.id, tile.type, e)}
                 >
-                  {tile.component}
+                  {typeof tile.component === 'function' ? tile.component(currentSize) : tile.component}
                 </SortableTile>
               );
             })}
